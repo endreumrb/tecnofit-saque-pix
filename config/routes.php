@@ -9,10 +9,20 @@ declare(strict_types=1);
  * @contact  group@hyperf.io
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
+use App\Controller\AccountController;
 use Hyperf\HttpServer\Router\Router;
 
-Router::addRoute(['GET', 'POST', 'HEAD'], '/', 'App\Controller\IndexController@index');
-
-Router::get('/favicon.ico', function () {
-    return '';
+/*
+ * Healthcheck
+ */
+Router::get('/health', function () {
+    return ['status' => 'ok'];
 });
+
+/*
+ * Withdraw balance
+ */
+Router::post(
+    '/account/{accountId}/balance/withdraw',
+    [AccountController::class, 'withdraw']
+);
