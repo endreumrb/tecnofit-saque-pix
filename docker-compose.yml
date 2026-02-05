@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  # API PHP Hyperf
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tecnofit-api
+    ports:
+      - "9501:9501"
+    volumes:
+      - .:/opt/www
+      - /opt/www/vendor  # Volume anônimo para proteger vendor
+    environment:
+      - SCAN_CACHEABLE=false
+    depends_on:
+      - mysql
+      - mailhog
+    networks:
+      - tecnofit-network
+
+  # MySQL 8
+  mysql:
+    image: mysql:8.0
+    container_name: tecnofit-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: tecnofit
+      TZ: America/Sao_Paulo
+    volumes:
+      - mysql-data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+    networks:
+      - tecnofit-network
+
+  # Mailhog (serviço de email para testes)
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: tecnofit-mailhog
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Interface Web
+    networks:
+      - tecnofit-network
+
+volumes:
+  mysql-data:
+
+networks:
+  tecnofit-network:
+    driver: bridge

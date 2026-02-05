@@ -1,0 +1,32 @@
+# Vendor
+/vendor/
+
+# Runtime
+/runtime/logs/
+/runtime/cache/
+/runtime/container/
+
+# Environment
+.env
+.env.backup
+.env.production
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker volumes
+mysql-data/
+
+# Composer
+composer.lock
+
+# Test coverage
+/test/coverage/
