@@ -26,7 +26,6 @@ class AppExceptionHandler extends ExceptionHandler
 {
     public function handle(Throwable $throwable, ResponseInterface $response)
     {
-        // Determina status e mensagem
         $status = 500;
         $error = 'erro_interno';
         $message = $throwable->getMessage();
@@ -44,22 +43,10 @@ class AppExceptionHandler extends ExceptionHandler
             $error = 'erro_negocio';
         }
 
-        // Em desenvolvimento, retorna detalhes completos
-        if (env('APP_ENV') === 'dev') {
-            $body = [
-                'error' => $error,
-                'message' => $message,
-                'exception' => get_class($throwable),
-                'file' => $throwable->getFile(),
-                'line' => $throwable->getLine(),
-                'trace' => explode("\n", $throwable->getTraceAsString()),
-            ];
-        } else {
-            $body = [
-                'error' => $error,
-                'message' => $status === 500 ? 'Erro Interno do Servidor' : $message,
-            ];
-        }
+        $body = [
+            'error' => $error,
+            'message' => $status === 500 ? 'Erro Interno do Servidor' : $message,
+        ];
 
         return $response
             ->withStatus($status)
