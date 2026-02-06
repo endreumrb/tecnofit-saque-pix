@@ -25,6 +25,7 @@ use Ramsey\Uuid\Uuid;
 class AccountService
 {
     public function __construct(
+        private readonly EmailService $emailService,
         private readonly LoggerInterface $logger
     ) {
     }
@@ -36,6 +37,10 @@ class AccountService
         float $amount,
         ?string $schedule
     ): array {
+        if ($schedule !== null) {
+            return $this->scheduleWithdraw($accountId, $method, $pix, $amount, $schedule);
+        }
+
         return $this->withdrawNow($accountId, $method, $pix, $amount);
     }
 
@@ -97,6 +102,15 @@ class AccountService
 
             $processedAt = Carbon::now()->toDateTimeString();
 
+            $this->emailService->sendWithdrawNotification(
+                email: $pix['key'],
+                withdrawId: $withdraw->id,
+                amount: $amount,
+                pixType: $pix['type'],
+                pixKey: $pix['key'],
+                processedAt: $processedAt
+            );
+
             $this->logger->info('Saque concluído com sucesso', [
                 'withdraw_id' => $withdraw->id,
                 'account_id' => $accountId,
@@ -113,6 +127,64 @@ class AccountService
                 'saldo' => $account->balance,
                 'valor' => $amount,
                 'processado_em' => $processedAt,
+            ];
+        });
+    }
+
+    private function scheduleWithdraw(
+        string $accountId,
+        string $method,
+        array $pix,
+        float $amount,
+        string $schedule
+    ): array {
+        $this->logger->info('Agendando saque', [
+            'account_id' => $accountId,
+            'amount' => $amount,
+            'method' => $method,
+            'scheduled_for' => $schedule,
+        ]);
+
+        return Db::transaction(function () use ($accountId, $method, $pix, $amount, $schedule) {
+            $account = Account::query()->where('id', $accountId)->first();
+
+            if (! $account) {
+                $this->logger->warning('Conta não encontrada para agendamento', [
+                    'account_id' => $accountId,
+                ]);
+                throw new AccountNotFoundException('Conta não encontrada');
+            }
+
+            $withdrawId = Uuid::uuid4()->toString();
+            $withdraw = $this->createWithdraw(
+                id: $withdrawId,
+                accountId: $account->id,
+                method: $method,
+                amount: $amount,
+                scheduled: true,
+                scheduledFor: $schedule,
+                done: false
+            );
+
+            $this->createWithdrawPix(
+                withdrawId: $withdrawId,
+                type: $pix['type'],
+                key: $pix['key']
+            );
+
+            $this->logger->info('Saque agendado com sucesso', [
+                'withdraw_id' => $withdraw->id,
+                'account_id' => $accountId,
+                'amount' => $amount,
+                'scheduled_for' => $schedule,
+            ]);
+
+            return [
+                'status' => 'agendado',
+                'id_saque' => $withdraw->id,
+                'id_conta' => $account->id,
+                'agendado_para' => $schedule,
+                'valor' => $amount,
             ];
         });
     }
