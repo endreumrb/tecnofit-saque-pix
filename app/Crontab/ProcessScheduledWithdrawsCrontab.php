@@ -32,24 +32,25 @@ use Throwable;
 class ProcessScheduledWithdrawsCrontab
 {
     private const LOCK_TTL = 60;
-    
+
     public function __construct(
         private readonly EmailService $emailService,
         private readonly LoggerInterface $logger,
         private readonly Redis $redis
-    ) {}
+    ) {
+    }
 
     public function execute(): void
     {
         $globalLock = 'cron:scheduled_withdraws:lock';
-        
+
         $acquired = $this->redis->set(
-            $globalLock, 
+            $globalLock,
             getmypid(),
             ['NX', 'EX' => self::LOCK_TTL]
         );
-        
-        if (!$acquired) {
+
+        if (! $acquired) {
             $this->logger->info('Processamento de saques agendados já em execução em outra instância', [
                 'lock_holder' => $this->redis->get($globalLock),
                 'current_pid' => getmypid(),

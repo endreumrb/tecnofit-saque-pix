@@ -13,8 +13,8 @@ use App\Processor\RequestIdProcessor;
 use Monolog\Formatter\JsonFormatter;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
-use Monolog\Processor\PsrLogMessageProcessor;
 use Monolog\Processor\ProcessIdProcessor;
+use Monolog\Processor\PsrLogMessageProcessor;
 
 return [
     'default' => [
