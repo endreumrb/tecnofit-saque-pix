@@ -9,6 +9,7 @@ declare(strict_types=1);
  * @contact  group@hyperf.io
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
+use App\Processor\RequestIdProcessor;
 use Monolog\Formatter\JsonFormatter;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
@@ -37,6 +38,9 @@ return [
             ],
             [
                 'class' => ProcessIdProcessor::class,
+            ],
+            [
+                'class' => RequestIdProcessor::class,
             ],
         ],
     ],
