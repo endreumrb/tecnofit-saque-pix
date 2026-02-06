@@ -11,7 +11,7 @@ services:
       - "9501:9501"
     volumes:
       - .:/opt/www
-      - /opt/www/vendor  # Volume anônimo para proteger vendor
+      - /opt/www/vendor
     environment:
       - SCAN_CACHEABLE=false
     depends_on:
@@ -41,8 +41,8 @@ services:
     image: mailhog/mailhog:latest
     container_name: tecnofit-mailhog
     ports:
-      - "1025:1025"  # SMTP
-      - "8025:8025"  # Interface Web
+      - "1025:1025"
+      - "8025:8025"
     networks:
       - tecnofit-network
 
