@@ -29,6 +29,7 @@
         "hyperf/memory": "~3.1.0",
         "hyperf/migration-generator": "^3.1",
         "hyperf/process": "~3.1.0",
+        "hyperf/redis": "^3.1",
         "ramsey/uuid": "^4.9"
     },
     "require-dev": {
