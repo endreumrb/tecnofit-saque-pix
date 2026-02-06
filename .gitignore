@@ -24,8 +24,5 @@ Thumbs.db
 # Docker volumes
 mysql-data/
 
-# Composer
-composer.lock
-
 # Test coverage
 /test/coverage/
