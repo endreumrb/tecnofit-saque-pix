@@ -19,6 +19,7 @@ use App\Service\EmailService;
 use Carbon\Carbon;
 use Hyperf\Crontab\Annotation\Crontab;
 use Hyperf\DbConnection\Db;
+use Hyperf\Redis\Redis;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -30,15 +31,44 @@ use Throwable;
 )]
 class ProcessScheduledWithdrawsCrontab
 {
+    private const LOCK_TTL = 60;
+    
     public function __construct(
         private readonly EmailService $emailService,
-        private readonly LoggerInterface $logger
-    ) {
-    }
+        private readonly LoggerInterface $logger,
+        private readonly Redis $redis
+    ) {}
 
     public function execute(): void
     {
-        $this->logger->info('Iniciando processamento de saques agendados');
+        $globalLock = 'cron:scheduled_withdraws:lock';
+        
+        $acquired = $this->redis->set(
+            $globalLock, 
+            getmypid(),
+            ['NX', 'EX' => self::LOCK_TTL]
+        );
+        
+        if (!$acquired) {
+            $this->logger->info('Processamento de saques agendados já em execução em outra instância', [
+                'lock_holder' => $this->redis->get($globalLock),
+                'current_pid' => getmypid(),
+            ]);
+            return;
+        }
+
+        try {
+            $this->processScheduledWithdraws();
+        } finally {
+            $this->redis->del($globalLock);
+        }
+    }
+
+    private function processScheduledWithdraws(): void
+    {
+        $this->logger->info('Iniciando processamento de saques agendados', [
+            'pid' => getmypid(),
+        ]);
 
         $startTime = microtime(true);
 
