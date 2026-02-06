@@ -9,25 +9,34 @@ declare(strict_types=1);
  * @contact  group@hyperf.io
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
-use Monolog\Formatter\LineFormatter;
+use Monolog\Formatter\JsonFormatter;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
+use Monolog\Processor\PsrLogMessageProcessor;
+use Monolog\Processor\ProcessIdProcessor;
 
 return [
     'default' => [
         'handler' => [
             'class' => StreamHandler::class,
             'constructor' => [
-                'stream' => BASE_PATH . '/runtime/logs/hyperf.log',
+                'stream' => 'php://stdout',
                 'level' => Logger::DEBUG,
             ],
         ],
         'formatter' => [
-            'class' => LineFormatter::class,
+            'class' => JsonFormatter::class,
             'constructor' => [
-                'format' => null,
-                'dateFormat' => 'Y-m-d H:i:s',
-                'allowInlineLineBreaks' => true,
+                'batchMode' => JsonFormatter::BATCH_MODE_NEWLINES,
+                'appendNewline' => true,
+            ],
+        ],
+        'processors' => [
+            [
+                'class' => PsrLogMessageProcessor::class,
+            ],
+            [
+                'class' => ProcessIdProcessor::class,
             ],
         ],
     ],
