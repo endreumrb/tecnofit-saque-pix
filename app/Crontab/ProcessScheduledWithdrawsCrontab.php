@@ -26,16 +26,10 @@ use Throwable;
     name: 'ProcessScheduledWithdraws',
     rule: '* * * * *',
     callback: 'execute',
-    memo: 'Process scheduled withdraws every minute'
+    memo: 'Processa saques agendados a cada minuto'
 )]
 class ProcessScheduledWithdrawsCrontab
 {
-    /**
-     * Injeção de dependências via Constructor Property Promotion.
-     *
-     * O Hyperf resolve automaticamente as dependências.
-     * Usa PSR-3 LoggerInterface (padrão) ao invés de StdoutLoggerInterface.
-     */
     public function __construct(
         private readonly EmailService $emailService,
         private readonly LoggerInterface $logger
@@ -44,11 +38,10 @@ class ProcessScheduledWithdrawsCrontab
 
     public function execute(): void
     {
-        $this->logger->info('Starting scheduled withdrawals processing');
+        $this->logger->info('Iniciando processamento de saques agendados');
 
         $startTime = microtime(true);
 
-        // Busca saques agendados pendentes
         $withdraws = AccountWithdraw::query()
             ->where('scheduled', true)
             ->where('done', false)
@@ -56,7 +49,7 @@ class ProcessScheduledWithdrawsCrontab
             ->get();
 
         if ($withdraws->isEmpty()) {
-            $this->logger->info('No scheduled withdrawals to process');
+            $this->logger->info('Nenhum saque agendado para processar');
             return;
         }
 
@@ -64,7 +57,7 @@ class ProcessScheduledWithdrawsCrontab
         $processed = 0;
         $errors = 0;
 
-        $this->logger->info('Found scheduled withdrawals to process', [
+        $this->logger->info('Saques agendados encontrados', [
             'total' => $pendingCount,
         ]);
 
@@ -73,7 +66,7 @@ class ProcessScheduledWithdrawsCrontab
                 $this->processWithdraw($withdraw);
                 ++$processed;
 
-                $this->logger->info('Scheduled withdrawal processed successfully', [
+                $this->logger->info('Saque agendado processado com sucesso', [
                     'withdraw_id' => $withdraw->id,
                     'account_id' => $withdraw->account_id,
                     'amount' => $withdraw->amount,
@@ -81,7 +74,7 @@ class ProcessScheduledWithdrawsCrontab
             } catch (Throwable $e) {
                 ++$errors;
 
-                $this->logger->error('Error processing scheduled withdrawal', [
+                $this->logger->error('Erro ao processar saque agendado', [
                     'withdraw_id' => $withdraw->id,
                     'account_id' => $withdraw->account_id,
                     'error' => $e->getMessage(),
@@ -92,25 +85,18 @@ class ProcessScheduledWithdrawsCrontab
 
         $duration = round(microtime(true) - $startTime, 2);
 
-        $this->logger->info('Scheduled withdrawals processing completed', [
+        $this->logger->info('Processamento de saques agendados concluído', [
             'total' => $pendingCount,
-            'processed' => $processed,
-            'errors' => $errors,
-            'success_rate' => $pendingCount > 0 ? round(($processed / $pendingCount) * 100, 2) : 0,
-            'duration_seconds' => $duration,
+            'processados' => $processed,
+            'erros' => $errors,
+            'taxa_sucesso' => $pendingCount > 0 ? round(($processed / $pendingCount) * 100, 2) : 0,
+            'duracao_segundos' => $duration,
         ]);
     }
 
-    /**
-     * Processa um saque agendado individual.
-     *
-     * Usa lock pessimista para garantir consistência mesmo
-     * em ambiente com múltiplas instâncias do cron.
-     */
     private function processWithdraw(AccountWithdraw $withdraw): void
     {
         Db::transaction(function () use ($withdraw) {
-            // 1. Busca conta com lock
             $account = Account::query()
                 ->where('id', $withdraw->account_id)
                 ->lockForUpdate()
@@ -119,10 +105,10 @@ class ProcessScheduledWithdrawsCrontab
             if (! $account) {
                 $withdraw->done = true;
                 $withdraw->error = true;
-                $withdraw->error_reason = 'Account not found';
+                $withdraw->error_reason = 'Conta não encontrada';
                 $withdraw->save();
 
-                $this->logger->warning('Account not found during scheduled withdrawal', [
+                $this->logger->warning('Conta não encontrada durante processamento', [
                     'withdraw_id' => $withdraw->id,
                     'account_id' => $withdraw->account_id,
                 ]);
@@ -130,14 +116,13 @@ class ProcessScheduledWithdrawsCrontab
                 return;
             }
 
-            // 2. Valida saldo
             if ($account->balance < $withdraw->amount) {
                 $withdraw->done = true;
                 $withdraw->error = true;
-                $withdraw->error_reason = 'Insufficient balance';
+                $withdraw->error_reason = 'Saldo insuficiente';
                 $withdraw->save();
 
-                $this->logger->warning('Insufficient balance for scheduled withdrawal', [
+                $this->logger->warning('Saldo insuficiente para saque agendado', [
                     'withdraw_id' => $withdraw->id,
                     'account_id' => $withdraw->account_id,
                     'balance' => $account->balance,
@@ -147,17 +132,15 @@ class ProcessScheduledWithdrawsCrontab
                 return;
             }
 
-            // 3. Deduz saldo
             $oldBalance = $account->balance;
             $account->balance -= $withdraw->amount;
             $account->save();
 
-            // 4. Marca como processado
             $withdraw->done = true;
             $withdraw->error = false;
             $withdraw->save();
 
-            $this->logger->debug('Balance updated for scheduled withdrawal', [
+            $this->logger->debug('Saldo atualizado para saque agendado', [
                 'withdraw_id' => $withdraw->id,
                 'account_id' => $withdraw->account_id,
                 'old_balance' => $oldBalance,
@@ -165,7 +148,6 @@ class ProcessScheduledWithdrawsCrontab
                 'amount' => $withdraw->amount,
             ]);
 
-            // 5. Busca dados PIX e envia email
             $pixData = AccountWithdrawPix::query()
                 ->where('account_withdraw_id', $withdraw->id)
                 ->first();
@@ -180,7 +162,7 @@ class ProcessScheduledWithdrawsCrontab
                     processedAt: Carbon::now()->toDateTimeString()
                 );
 
-                $this->logger->debug('Email notification sent for scheduled withdrawal', [
+                $this->logger->debug('Email de notificação enviado', [
                     'withdraw_id' => $withdraw->id,
                     'recipient' => $pixData->key,
                 ]);
