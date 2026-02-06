@@ -11,13 +11,20 @@ Case técnico Tecnofit - API para gerenciamento de saques via PIX com agendament
 
 ## ⚡ Como Rodar
 ```bash
-# 1. Subir containers
+# 1. Clonar o repositório
+git clone https://github.com/endreumrb/tecnofit-saque-pix
+cd tecnofit-saque-pix
+
+# 2. Copiar arquivo de ambiente
+cp .env.example .env
+
+# 3. Subir containers
 docker-compose up -d
 
-# 2. Rodar migrations
+# 4. Rodar migrations
 docker-compose exec api php bin/hyperf.php migrate
 
-# 3. Popular dados de exemplo
+# 5. Popular dados de exemplo
 docker-compose exec api php bin/hyperf.php db:seed
 ```
 
