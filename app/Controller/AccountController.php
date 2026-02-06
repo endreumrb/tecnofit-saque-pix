@@ -139,6 +139,10 @@ class AccountController extends AbstractController
             throw new InvalidArgumentException('Valor deve ser maior que zero');
         }
 
+        if (round((float) $amount, 2) != (float) $amount) {
+            throw new InvalidArgumentException('Amount deve ter no máximo 2 casas decimais');
+        }
+
         if ($schedule !== null && ! strtotime($schedule)) {
             throw new InvalidArgumentException('Formato de agendamento inválido');
         }
