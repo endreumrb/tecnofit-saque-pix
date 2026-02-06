@@ -10,18 +10,13 @@ declare(strict_types=1);
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
 use App\Controller\AccountController;
+use App\Controller\HealthController;
 use Hyperf\HttpServer\Router\Router;
 
-/*
- * Healthcheck
- */
-Router::get('/health', function () {
-    return ['status' => 'ok'];
-});
+Router::get('/health', [HealthController::class, 'basic']);
+Router::get('/health/ready', [HealthController::class, 'readiness']);
+Router::get('/health/live', [HealthController::class, 'liveness']);
 
-/*
- * Withdraw balance
- */
 Router::post(
     '/account/{accountId}/balance/withdraw',
     [AccountController::class, 'withdraw']
