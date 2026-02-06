@@ -26,13 +26,6 @@ class AppExceptionHandler extends ExceptionHandler
 {
     public function handle(Throwable $throwable, ResponseInterface $response)
     {
-        $this->logger->error('Exception occurred', [
-            'exception' => get_class($throwable),
-            'message' => $throwable->getMessage(),
-            'file' => $throwable->getFile(),
-            'line' => $throwable->getLine(),
-        ]);
-
         $status = 500;
         $error = 'erro_interno';
         $message = $throwable->getMessage();

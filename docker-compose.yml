@@ -9,6 +9,7 @@ services:
     container_name: tecnofit-api
     ports:
       - "9501:9501"
+      - "9500:9500" 
     volumes:
       - .:/opt/www
       - /opt/www/vendor

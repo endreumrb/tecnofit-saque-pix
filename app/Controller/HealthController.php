@@ -6,8 +6,10 @@ namespace App\Controller;
 
 use Hyperf\DbConnection\Db;
 use Hyperf\Redis\Redis;
+use Hyperf\Swagger\Annotation as SA;
 use Psr\Log\LoggerInterface;
 
+#[SA\HyperfServer('http')]
 class HealthController extends AbstractController
 {
     public function __construct(
@@ -15,6 +17,15 @@ class HealthController extends AbstractController
         private readonly LoggerInterface $logger
     ) {}
 
+    #[SA\Get(
+        path: '/health',
+        summary: 'Health check básico',
+        tags: ['Monitoramento']
+    )]
+    #[SA\Response(
+        response: 200,
+        description: 'Serviço funcionando'
+    )]
     public function basic(): array
     {
         return [
@@ -24,6 +35,15 @@ class HealthController extends AbstractController
         ];
     }
     
+    #[SA\Get(
+        path: '/health/ready',
+        summary: 'Readiness probe',
+        tags: ['Monitoramento']
+    )]
+    #[SA\Response(
+        response: 200,
+        description: 'Verifica se está pronto para receber tráfego'
+    )]
     public function readiness(): array
     {
         $checks = [];
@@ -73,6 +93,15 @@ class HealthController extends AbstractController
         ];
     }
     
+    #[SA\Get(
+        path: '/health/live',
+        summary: 'Liveness probe',
+        tags: ['Monitoramento']
+    )]
+    #[SA\Response(
+        response: 200,
+        description: 'Verifica se o processo está vivo'
+    )]
     public function liveness(): array
     {
         return [
