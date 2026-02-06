@@ -2,9 +2,8 @@
 /vendor/
 
 # Runtime
-/runtime/logs/
-/runtime/cache/
-/runtime/container/
+/runtime/*
+!/runtime/.gitkeep
 
 # Environment
 .env
